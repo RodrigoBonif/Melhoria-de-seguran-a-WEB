@@ -6,7 +6,7 @@
 *   **Turma:** Engenharia de Software - 5º Semestre
 *   **Data:** 05 de Maio de 2026
 *   **Link do Repositório:** https://github.com/RodrigoBonif/Melhoria-de-seguran-a-WEB
-*   **Link do Sistema Publicado:** [Link Simulado do GitHub Pages]
+*   **Link do Sistema Publicado:** https://melhoria-de-seguran-a-web.vercel.app/
 
 ## 2. Descrição Resumida do Sistema
 O sistema analisado é um protótipo de **Sistema de Ocorrências Acadêmicas**, desenvolvido para fins didáticos. Ele permite o registro, consulta e acompanhamento de demandas de alunos (como revisão de notas e contestações de frequência). O sistema possui três perfis de usuário: **Aluno**, **Professor** e **Administrador**. A aplicação foi construída utilizando apenas tecnologias de front-end (HTML, CSS e JavaScript), sem um back-end real ou banco de dados centralizado, utilizando o `localStorage` do navegador para persistência de dados.
