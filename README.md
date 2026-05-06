@@ -1,59 +1,58 @@
-# Relatório Técnico: Análise e Melhoria de Segurança em Sistema Web
+# Sistema de Ocorrências Acadêmicas — Análise e Fortalecimento de Segurança
 
-## 1. Identificação do Grupo
-*   **Nome da Disciplina:** Segurança da Informação
-*   **Nome dos Integrantes:** Rodrigo Bonifácio Conceição, Ruan Pablo de Lima Pereira, Vinicius Clemente Negherbon
-*   **Turma:** Engenharia de Software - 5º Semestre
-*   **Data:** 05 de Maio de 2026
-*   **Link do Repositório:** https://github.com/RodrigoBonif/Melhoria-de-seguran-a-WEB
-*   **Link do Sistema Publicado:** [Link Simulado do GitHub Pages]
+Este repositório contém a entrega da **Atividade Prática 01 (AP01)** da disciplina de **Segurança da Informação**. O objetivo do projeto foi realizar um *security assessment* em um protótipo funcional e implementar controles de mitigação para riscos identificados.
 
-## 2. Descrição Resumida do Sistema
-O sistema analisado é um protótipo de **Sistema de Ocorrências Acadêmicas**, desenvolvido para fins didáticos. Ele permite o registro, consulta e acompanhamento de demandas de alunos (como revisão de notas e contestações de frequência). O sistema possui três perfis de usuário: **Aluno**, **Professor** e **Administrador**. A aplicação foi construída utilizando apenas tecnologias de front-end (HTML, CSS e JavaScript), sem um back-end real ou banco de dados centralizado, utilizando o `localStorage` do navegador para persistência de dados.
+## 1. Visão Geral do Projeto
+O sistema original consistia em uma aplicação *client-side* pura para gestão de ocorrências acadêmicas. Durante a auditoria inicial, foram identificadas falhas críticas que comprometiam a tríade da segurança (Confidencialidade, Integridade e Disponibilidade), além de não conformidades com a LGPD.
 
-## 3. Regras de Negócio Percebidas
-Durante a análise, identificamos as seguintes regras (muitas delas apenas simuladas no front-end):
-*   **Autenticação:** O login é feito comparando e-mails e senhas em uma lista estática no código.
-*   **Perfis de Acesso:** Existem diferentes níveis de permissão, mas no código original, qualquer usuário podia realizar qualquer ação (como excluir registros ou ver notas internas).
-*   **Gestão de Ocorrências:** Professores e Admins deveriam criar e gerenciar ocorrências, enquanto alunos deveriam apenas visualizar as suas.
-*   **Auditoria:** O sistema possui uma área de logs que registra ações, mas esses logs podem ser apagados facilmente pelo usuário.
+## 2. Vulnerabilidades Identificadas
+A análise técnica revelou os seguintes pontos de falha:
+*   **Cross-Site Scripting (XSS):** Ausência de sanitização nos campos de entrada, permitindo a injeção de scripts maliciosos via formulário de ocorrências.
+*   **Broken Access Control (BAC):** Falta de validação de permissões no código, permitindo que o perfil `ALUNO` executasse ações administrativas (exclusão e alteração de status).
+*   **Exposição de Dados Sensíveis:** Exibição de CPFs e notas internas confidenciais para todos os perfis de usuário.
+*   **Insecure Storage:** Uso do `localStorage` para persistência de dados sensíveis e credenciais em texto claro no código-fonte.
+*   **Exposição de Segredos em Exportação:** O sistema exportava o token da API e a base de usuários completa (incluindo senhas) em arquivos JSON.
 
-## 4. Identificação dos Ativos
-| Item | Ativo Identificado | Por que este ativo tem valor? |
-| :--- | :--- | :--- |
-| 1 | Dados Pessoais dos Alunos | Contém nomes, CPFs, e-mails e telefones (protegidos pela LGPD). |
-| 2 | Registros de Ocorrências | Informações sensíveis sobre o desempenho e comportamento acadêmico. |
-| 3 | Notas Internas | Comentários da coordenação que não devem ser vistos pelos alunos. |
-| 4 | Logs de Auditoria | Essenciais para rastrear quem fez o quê no sistema. |
-| 5 | Código-Fonte (app.js) | Contém a lógica de negócio e "segredos" como tokens simulados. |
+## 3. Melhorias Implementadas
+Foram aplicados os seguintes controles de segurança no arquivo `app.js`:
 
-## 5. Classificação dos Dados e Ativos
-| Dado/Ativo | Classificação | Justificativa |
-| :--- | :--- | :--- |
-| Nome do Aluno | Interno | Necessário para identificação dentro da instituição. |
-| CPF do Aluno | Confidencial | Dado pessoal sensível que exige proteção contra exposição. |
-| Observação Interna | Restrito | Apenas para professores e administradores. |
-| Lista de Usuários | Confidencial | Contém credenciais de acesso (mesmo que simuladas). |
+### A. Sanitização de Inputs
+Implementação da função `sanitizeHTML` para neutralizar caracteres especiais em todos os campos de texto, mitigando vetores de ataque XSS.
 
-## 6. Análise de Riscos
-Identificamos riscos críticos devido à arquitetura "apenas front-end":
-1.  **Quebra de Confidencialidade:** Como os dados estão no `localStorage`, qualquer pessoa com acesso ao computador pode ler todos os registros.
-2.  **Falta de Integridade:** O usuário pode alterar os dados diretamente no console do navegador, burlando as regras de negócio.
-3.  **Ausência de Autenticação Real:** As senhas estão em texto claro no código-fonte.
-4.  **Vulnerabilidade a XSS:** O sistema original não sanitizava as entradas, permitindo a execução de scripts maliciosos através dos campos de descrição.
+### B. Controle de Acesso Baseado em Funções (RBAC Simulado)
+*   **Restrição de Escopo:** Alunos agora só podem visualizar ocorrências vinculadas ao seu próprio nome.
+*   **Privilégios Administrativos:** As funções de `delete` e `changeStatus` foram protegidas por verificações de perfil, sendo restritas a `ADMIN` e `PROFESSOR`.
 
-## 7. Tabela de Melhorias e Justificativas
-| Item Analisado | Risco Associado | Controle ou Melhoria Proposta | Foi Implementado? | Justificativa Técnica |
-| :--- | :--- | :--- | :--- | :--- |
-| Entrada de Dados | Ataque de XSS | Implementação de função `sanitizeHTML` para limpar inputs. | Sim | Evita a execução de scripts maliciosos injetados nos formulários. |
-| Exposição de CPF | Vazamento de Dados | Mascaramento de CPF para perfis não-administradores. | Sim | Aplica o princípio da necessidade de saber (Need-to-know). |
-| Notas Internas | Acesso Indevido | Restrição de visualização de notas internas para o perfil ALUNO. | Sim | Garante a confidencialidade de informações administrativas. |
-| Exclusão de Dados | Perda de Integridade | Restrição da função de exclusão apenas para o perfil ADMIN. | Sim | Implementa o Princípio do Menor Privilégio. |
-| Logs de Sistema | Falta de Rastreabilidade | Melhoria no detalhamento dos logs (quem e quando). | Sim | Melhora a capacidade de auditoria do sistema. |
-| Armazenamento | Manipulação de Dados | Migração para um Banco de Dados real com API. | Dependeria de Back-end | O `localStorage` não é um meio seguro para dados sensíveis. |
+### C. Mascaramento e Minimização de Dados
+*   **Data Masking:** O CPF dos estudantes agora é mascarado (`***.***.***-**`) para perfis não-administrativos.
+*   **Sigilo de Notas:** O campo "Observação Interna" é ocultado para o perfil `ALUNO`, garantindo a confidencialidade da comunicação administrativa.
 
-## 8. Conclusão Técnica
-**O sistema, da forma como foi recebido, poderia ser usado em produção com dados reais?**
-**Não.** Embora o protótipo seja funcional para fins de demonstração, ele apresenta falhas graves de segurança que violam princípios básicos da Segurança da Informação e da LGPD. A principal limitação é a ausência de um back-end seguro. Em um ambiente real, as credenciais nunca devem ficar no front-end, e a autorização deve ser validada no servidor, não apenas na interface.
+### D. Fortalecimento da Rastreabilidade
+Os logs de auditoria foram reestruturados para incluir detalhes mais precisos sobre o autor da ação e o contexto do evento, dificultando a negação de ações (non-repudiation).
 
-As melhorias implementadas no front-end (sanitização, mascaramento e restrições de UI) mitigam alguns riscos superficiais, mas a solução definitiva exige uma arquitetura cliente-servidor com banco de dados protegido e criptografia de dados em repouso.
+### E. Higienização de Exportações
+A função de exportação foi modificada para remover o `FAKE_API_TOKEN` e a lista `USERS`. Agora, o arquivo JSON contém apenas os dados operacionais (ocorrências e logs), protegendo as credenciais do sistema.
+
+## 4. Limitações e Recomendações
+Como o projeto é estritamente *front-end*, as seguintes limitações persistem:
+1.  **Segurança de Sessão:** A autenticação é apenas visual; um usuário avançado pode manipular o `localStorage` para elevar privilégios.
+2.  **Persistência:** Os dados não possuem integridade garantida por um banco de dados relacional com ACID.
+
+**Recomendação Técnica:** Para uso em produção, é imperativo migrar a lógica de autorização e o armazenamento para um ambiente *back-end* seguro, utilizando tokens JWT para gestão de sessão e criptografia de dados em repouso.
+
+## 5. Como Executar
+1.  Clone o repositório: `https://github.com/RodrigoBonif/Melhoria-de-seguran-a-WEB`
+2.  Acesse a versão publicada: [https://melhoria-de-seguran-a-web.vercel.app/](https://melhoria-de-seguran-a-web.vercel.app/)
+3.  Abra o arquivo `index.html` em qualquer navegador moderno.
+4.  Utilize os usuários de demonstração listados na tela de login para testar os diferentes níveis de acesso.
+
+---
+
+**Desenvolvido por:** 
+*   Rodrigo Bonifácio Conceição
+*   Ruan Pablo de Lima Pereira
+*   Vinicius Clemente Negherbon
+
+**Disciplina:** Segurança da Informação
+**Turma:** Engenharia de Software - 5º Semestre
+**Data:** 05 de Maio de 2026
