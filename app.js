@@ -305,14 +305,17 @@ function changeStatus(id, status) {
 }
 
 function exportEverything() {
+  const session = getSession();
+  
+  // Melhoria: Remoção de dados sensíveis (Token e Lista de Usuários) da exportação
   const payload = {
     exportedAt: new Date().toISOString(),
-    exportedBy: getSession(),
-    token: FAKE_API_TOKEN,
-    users: USERS,
+    exportedBy: session ? { name: session.name, email: session.email, role: session.role } : "anônimo",
+    // token: FAKE_API_TOKEN, // REMOVIDO POR SEGURANÇA
+    // users: USERS, // REMOVIDO POR SEGURANÇA (Contém senhas)
     occurrences: getOccurrences(),
-    audit: getAuditLogs(),
-    localStorageCopy: { ...localStorage }
+    audit: getAuditLogs()
+    // localStorageCopy: { ...localStorage } // REMOVIDO POR SEGURANÇA
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
